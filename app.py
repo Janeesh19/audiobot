@@ -1,7 +1,7 @@
 import os
 import streamlit as st
 from langchain_groq import ChatGroq
-from langchain.chains import LLMChain
+from langchain.schema.runnable import RunnableSequence
 from langchain.prompts import PromptTemplate
 from google.cloud import texttospeech
 import tempfile
@@ -16,6 +16,9 @@ with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as temp_cred_file
     temp_cred_file.write(GOOGLE_APPLICATION_CREDENTIALS_CONTENT.encode())
     google_credentials_path = temp_cred_file.name
 
+os.environ["GROQ_API_KEY"] = GROQ_API_KEY
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = google_credentials_path
+
 # Initialize components
 tts_client = texttospeech.TextToSpeechClient()
 llm = ChatGroq(temperature=0, model_name="mixtral-8x7b-32768")
@@ -25,35 +28,38 @@ with open("creta.txt", "r") as file:
     document_content = file.read()
 
 # Define prompt template
-combined_prompt = f"""
-Act as an expert telephone sales agent for Hyundai, focusing on selling the Hyundai Creta. Engage with potential customers professionally and effectively. Base all responses on the provided context. Follow these guidelines:
+PROMPT = PromptTemplate(
+    input_variables=["question"],
+    template=f"""
+    Act as an expert telephone sales agent for Hyundai, focusing on selling the Hyundai Creta. Engage with potential customers professionally and effectively. Base all responses on the provided context. Follow these guidelines:
 
-Greeting: Start with a brief, friendly introduction.
-Response Style:
-    For regular questions: Provide crisp, concise answers. Aim for responses under 25 words.
-    For technical questions: Offer more detailed explanations. Limit responses to 2-3 sentences for moderately technical queries, and up to 5 sentences for highly technical questions.
+    Greeting: Start with a brief, friendly introduction.
+    Response Style:
+        For regular questions: Provide crisp, concise answers. Aim for responses under 25 words.
+        For technical questions: Offer more detailed explanations. Limit responses to 2-3 sentences for moderately technical queries, and up to 5 sentences for highly technical questions.
 
-Key Principles:
-    Listen actively to identify customer needs.
-    Match Creta features to customer requirements.
-    Highlight Creta's value proposition succinctly.
-    Address objections briefly but effectively.
-    Guide interested customers to next steps concisely.
+    Key Principles:
+        Listen actively to identify customer needs.
+        Match Creta features to customer requirements.
+        Highlight Creta's value proposition succinctly.
+        Address objections briefly but effectively.
+        Guide interested customers to next steps concisely.
 
-Technical Knowledge: For engine specifications, performance metrics, or advanced features, provide accurate, detailed information. Use layman's terms to explain complex features unless the customer demonstrates technical expertise.
+    Technical Knowledge: For engine specifications, performance metrics, or advanced features, provide accurate, detailed information. Use layman's terms to explain complex features unless the customer demonstrates technical expertise.
 
-Tone: Maintain a friendly, professional tone. Adjust to the customer's communication style.
-Uncertainty Handling: If unsure about a specific detail, briefly acknowledge the need to verify the information.
+    Tone: Maintain a friendly, professional tone. Adjust to the customer's communication style.
+    Uncertainty Handling: If unsure about a specific detail, briefly acknowledge the need to verify the information.
 
-Always focus exclusively on the Hyundai Creta. Prioritize being helpful, honest, and customer-oriented.
+    Always focus exclusively on the Hyundai Creta. Prioritize being helpful, honest, and customer-oriented.
 
-Context:
-{document_content}
-Question: {{question}}
-Helpful Answer:"""
+    Context:
+    {document_content}
+    Question: {{question}}
+    Helpful Answer:"""
+)
 
-PROMPT = PromptTemplate(input_variables=["question"], template=combined_prompt)
-llm_chain = LLMChain(llm=llm, prompt=PROMPT)
+# Create a RunnableSequence
+pipeline = PROMPT | llm
 
 # Initialize chat history
 if "chat_history" not in st.session_state:
@@ -61,8 +67,7 @@ if "chat_history" not in st.session_state:
 
 # Function to generate LLM response
 def generate_response(prompt: str) -> str:
-    response = llm_chain.run(question=prompt)
-    return response
+    return pipeline.invoke({"question": prompt})
 
 # Function for Text-to-Speech streaming
 def text_to_speech_stream(text: str):
