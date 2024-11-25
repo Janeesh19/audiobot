@@ -1,6 +1,5 @@
-streamlit
-langchain
-langchain-groq
-google-cloud-texttospeech
-SpeechRecognition
-tempfile
+streamlit==1.25.0
+langchain==0.0.194
+langchain-groq==0.1.0
+google-cloud-texttospeech==2.14.1
+SpeechRecognition==3.9.0
