@@ -35,7 +35,7 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = google_credentials_path
 
 # Initialize components
 tts_client = texttospeech.TextToSpeechClient()
-llm = ChatGroq(temperature=0, model_name="mixtral-8x7b-32768")
+llm = ChatGroq(api_key=GROQ_API_KEY,temperature=0, model_name="mixtral-8x7b-32768")
 
 # Load document content for context
 document_content = """
