@@ -1,7 +1,5 @@
-streamlit
-langchain
+streamlit==1.25.0
 langchain-groq
 google-cloud-texttospeech
-speechrecognition
-PyPDF2
-pydub
+SpeechRecognition
+tempfile
