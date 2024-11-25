@@ -1,0 +1,7 @@
+streamlit
+langchain
+langchain-groq
+google-cloud-texttospeech
+speechrecognition
+PyPDF2
+pydub
