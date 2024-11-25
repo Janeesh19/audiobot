@@ -157,7 +157,6 @@ for message in st.session_state.chat_history:
     if message["role"] == "user":
         st.write(f"**You:** {message['content']}")
     else:
-        st.write(f"**Bot:** {message['content']}")
         if message.get("audio"):
             with open(message["audio"], "rb") as audio_file:
                 st.audio(audio_file.read(), format="audio/mp3")
